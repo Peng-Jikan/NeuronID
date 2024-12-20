@@ -1,0 +1,2 @@
+Kindly place your original datasets (TIF stacks, e.g., CellVideo1.tif, CellVideo2.tif, CellVideo3.tif) in this directory to ensure proper organization and accessibility. 
+Once the datasets are correctly arranged, please remove this instruction file to proceed with the processin

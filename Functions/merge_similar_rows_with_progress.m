@@ -1,0 +1,1 @@
+w=warndlg('Operating completed, this massage will destruct.','Warning');
