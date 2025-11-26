@@ -1,26 +1,85 @@
 User Guide for NeuronID
 
-Jikan Peng (pengjikan@westlake.edu.cn, Westlake University, China)
+Jikan Peng (pengjikan@westlake.edu.cn) | Westlake University, China
 
-Running Environment: The initial version of NeuronID was developed using MATLAB 2023b (MathWorks, USA). To use this software, you can enter 'CSE' in the MATLAB command window, or directly launch the application by running CSE.mlapp. If you need to inspect or modify the code related to this software, you can open the CSE.mlapp and proceed with your changes.
+1. Overview
+NeuronID is an open-source, automated toolkit for processing two-photon calcium imaging data, featuring motion correction, noise reduction, neuronal component segmentation, and signal extraction. This guide provides instructions for installing and running the software.
+2. System Requirements & Installation
+•	Required Software: MATLAB R2023b or later (MathWorks, USA).
+•	Installation: No formal installation is required. Simply add the NeuronID directory and its subfolders to your MATLAB path.
+•	Launching the Application:
+o	GUI Mode (Recommended): Type CSE in the MATLAB command window, or directly run CSE.mlapp.
+o	Code Access: To inspect or modify the source code, open CSE.mlapp in MATLAB’s App Designer.
+3. Data Preparation
+We recommend organizing your data as follows for optimal compatibility:
+1.	Create a main folder for each subject (e.g., Mouse#1).
+2.	Inside this folder, create a subfolder named Raw to store all original two-photon imaging files (e.g., .tif stacks).
+3.	Ensure you have the following metadata for your imaging data:
+o	Pixel Dimensions (width x height in pixels)
+o	Field of View (physical size in micrometers, e.g., 512 µm x 512 µm)
+o	Imaging Frequency (frame rate in Hz)
+4. Operation Modes
+NeuronID offers two primary analysis modes:
+•	A. Single-Subject Analysis
+1.	Click Open Mouse File and select the subject's main folder (e.g., Mouse#1).
+2.	Input the required parameters:
+	Scan Scale Ratio: (Physical Size per Pixel) = Field of View (µm) / Pixel Dimension.
+	One F Duration (ms): Time to acquire one frame = 1000 / Imaging Frequency (Hz).
+3.	Click Calculate to compute the calcium indicator's decay constant.
+4.	Click One-Click Run (Mouse) for a fully automated analysis pipeline.
+•	B. Batch Analysis (Multiple Subjects)
+1.	Ensure all subject folders are within a single parent directory.
+2.	Prepare a mouse.xlsx file listing the information for all subjects (a template is provided in the Mice folder).
+3.	In the CSE.mlapp source code, modify the Path variable for the One-Click Run (Mice) button to point to your parent directory.
+4.	Click One-Click Run (Mice) to process all datasets automatically.
+5. Step-by-Step Module Description
+For users who wish to execute and validate each step manually, the workflow is broken down into the following modules:
+•	5.1. Motion Correction
+o	Function: Corrects for rigid and non-rigid motion artifacts.
+o	Action: Click the Motion Correction button.
+o	Algorithm: Based on the NoRMCorre algorithm (https://github.com/flatironinstitute/NoRMCorre) with custom modifications.
+o	Output: Corrected images are saved in the Registration folder.
+o	Note: This step requires significant internal storage. Please ensure adequate disk space.
+•	5.2. Noise Reduction
+o	Function: Reduces independent noise using a deep learning approach.
+o	Algorithm: Based on the DeepInterpolation algorithm (https://github.com/AllenInstitute/deepinterpolation；https://github.com/MATLAB-Community-Toolboxes-at-INCF/DeepInterpolation-MATLAB).
+o	Workflow:
+1.	Normalize Parameters & Extract Key Frames: Prepares data for training.
+2.	Train Personal Model: Performs transfer learning from a pre-trained model (default: 30 Hz). Adjust the Number of Epoch as needed.
+3.	Evaluate Personal Model: Visualizes the training loss curve.
+4.	Denoise Images: Applies the model to reduce noise.
+o	Quality Control: Use SNR after Denoise and Evaluate Denoise to assess performance.
+o	Pre-trained Models: Multiple models for different imaging frequencies are available in the AIModel folder. NeuronID will auto-select a compatible model if available.
+o	Output: Denoised images are saved in the Denoise folder.
+•	5.3. Segmentation of Neuronal Components
+o	Function: Identifies and segments individual neuronal somata.
+o	Workflow:
+1.	Initialization: Prepares the data for segmentation.
+2.	Periodic Masks: Generates preliminary masks from temporal blocks (Default: Window Size=100, Step Size=20).
+3.	Potential Location: Identifies and excludes neuropil-associated pixels.
+4.	t-SNE Projection & Central Pixel: Clusters pixels by similarity and identifies key pixels (Default: Number of Center Pixels=9,000).
+5.	Temporal Mask: Integrates information across time to generate a temporal mask.
+6.	Mask Overlap & Combine Masks: Resolves overlapping regions.
+7.	Spatial Mask: Produces the final somatic mask.
+o	Output: All masks and intermediate results are saved in the Segment folder.
+o	Note: This step is computationally intensive and requires sufficient internal storage.
+•	5.4. Extraction of Neuronal Signal
+o	Function: Extracts and processes fluorescence signals from segmented neurons.
+o	Workflow:
+1.	Neuronal Fluorescence & Neuropil Fluorescence: Calculates raw signals.
+2.	Correct Fluorescence: Removes neuropil contamination and corrects for photobleaching.
+3.	Calcium Signals: Calculates ΔF/F to generate the calcium signal.
+4.	Event Signals: Performs deconvolution to infer spiking activity, using the provided Decay Index.
+o	Output: Extracted signals are saved in the Signal folder.
+6. Utilities
+•	Timeline Export: Use View Frames and Export Timeline to export temporal metadata for each frame.
+•	Mask Evaluation: The Evaluate Mask button allows for quantitative comparison between different segmentation masks.
+7. License, Copyright, and Citation
+•	Copyright: The overall architecture, integration code, and original modules of NeuronID are Copyright (c) Jikan Peng, Westlake University.
+•	Third-Party Code: This toolkit incorporates and modifies open-source components, including but not limited to:
+o	NoRMCorre: Copyright (c) their respective authors. Source: https://github.com/flatironinstitute/NoRMCorre.
+o	DeepInterpolation: Copyright (c) their respective authors. Source: (https://github.com/AllenInstitute/deepinterpolation；https://github.com/MATLAB-Community-Toolboxes-at-INCF/DeepInterpolation-MATLAB).
+•	Use: Use of NeuronID is permitted for non-commercial academic and research purposes only. For any commercial use, please contact the corresponding author.
+•	Citation: If you use NeuronID in your research, please cite our publication.
 
-Data Preparation: We strongly encourage you to create a standardized folder for each mouse, similar to the ‘Mouse#1’ example provided in this software. Within this folder, create a subfolder named ‘Raw’ to store all initial two-photon imaging datasets. Additionally, ensure that you have the basic information about your two-photon imaging data, which includes the pixel size of each frame, the physical size (in micrometers) of each frame, and the imaging frequency.
 
-Operation Model Selections: We have provided several options for your data analysis.
-To analyze the two-photon imaging dataset of a specific mouse, click the ‘Open Mouse File’ button to select the folder containing the mouse's data. Following this, input the necessary parameters, including the scan scale ratio—defined as the ratio between the pixel size and the physical size—and the duration (in milliseconds) required to image one frame. Additionally, you can click the ‘Calculate’ button to compute the Decay Index. After completing these steps, you can click the ‘Mouse’ button to perform a systematic and automatic analysis of your data, or you can follow the steps behind the ‘Mouse’ button to manually analyze your data. You can open the CSE.mlapp to view these steps.
-To analyze the two-photon imaging datasets of multiple mice, first-firstly you should open the CSE.mlapp and modify the ‘Path="Input your file pathway"’ code behind the ‘Mice’ button. Ensuring that all mouse folders are arranged in the same directory and that their information is listed in a ‘mouse.xlsx’ file, for which we have provided a template in the ‘Mice’ folder. After completing these steps, you can click the ‘Mice’ button to perform a systematic and automatic analysis of your data.
-
-Motion Correction: You can click the ‘Motion Correction’ button to correct motion artifacts within two-photon images. Alternatively, you can open this button to inspect the code and algorithms.The code associated with this feature is primarily based on the NoRMCorre algorithm (GitHub - flatironinstitute/NoRMCorre: Matlab routines for online non-rigid motion correction of calcium imaging data), with corresponding modifications described in our paper. 
-Note that this step requires sufficient internal storage to operate, so please ensure that you have adequate space before proceeding. The outcome of this step, or the two-photon images after motion correction, will be stored in a ‘Registration’ folder.
-
-Noise Reduction: After motion correction, you can reduce independent noise within individual frames using the DeepInterpolation algorithm (DeepInterpolation-MATLAB/README.md at main · MATLAB-Community-Toolboxes-at-INCF/DeepInterpolation-MATLAB · GitHub). The ‘Normalize Parameters’ and ‘Extract Key Frames’ buttons prepare materials for raining your personalized DeepInterpolation models. The ‘Train Personal Model’ button allows you to customize the model through transferring learning from an existing model trained under 30Hz imaging conditions. You can adjust the number of epochs for training by modifying the ‘Epoch’ parameter input. After completing the training, you can click the ‘Evaluate Personal Model’ button to see the trend of loss over different epochs. Subsequently, you can click the ‘Denoise Images’ button to reduce noise in your two-photon images. You can also assess the effect of noise reduction by clicking the ‘SNR after Denoise’ and ‘Evaluate Denoise (Reconstruction Loss)’ buttons, the methods for which are detailed in our paper. 
-In the current version, we provide multiple fine-tuned modes for distinct imaging frequency conditions, listed in the ‘AIModel’ folder. If an existing model is available, NeuronID will automatically use this model for noise reduction, rather than generating a new one. The outcome of this step, including the two-photon images after noise reduction, will be stored in a ‘Denoise’ folder.
-
-Neuronal Component Segmentation: You can use the functions behind the ‘Periodic Mask’, ‘Temporal Mask’, and ‘Demixing Masks’ modules to conduct the segmentation of neuronal components. The mathematical foundations and basis for these modules were introduced in our paper. Note that this step requires sufficient internal storage to operate, so please ensure that you have adequate space before proceeding. The outcome of this step, including the distinct masks, will be stored in a ‘Segment’ folder.
-Particularly, you can click the ‘Initialization’ button to prepare for the following steps. Click the ‘Periodic Masks’ button to divide the whole recording sequence into different temporal blocks and generate the corresponding periodic masks. After that, click the ‘Potential Location’ button to identify the pixels associated with neuropil. Subsequently, click the ‘t-SNE Projection’ and ‘Central Pixel’ buttons to visualize the similarity among pixels. Then, click the ‘Temporal Mask’ button to analyze the relationship between the core pixels and other pixels, generating a temporal mask. Finally, click the ‘Mask Overlap’ and ‘Combine Masks’ buttons to calculate and blend the overlapping masks within the temporal mask, and click the ‘Spatial Mask’ button to develop a spatial mask.
-
-Extraction of Neuronal Signal: You can extract and analyze the signal of individual neurons within the spatial mask using the ‘Extract Neuronal Signal’ module. The outcome of this step, including individual neuronal signals, will be stored in a ‘Signal’ folder. Specifically, the ‘Neuronal Fluorescence’ and ‘Neuropil Fluorescence’ buttons allow the calculation of the fluorescence signal of individual neurons and their associated neuropil. The ‘Correct Fluorescence’ button enables you to remove neuropil contamination from the neuronal signal and eliminate any polynomial trends within the data. The ‘Calcium Signals’ button allows you to normalize the signal and generate the calcium signal. The ‘Event Signals’ button provides a method to calculate the event signal of individual neurons, based on the Decay Index.
-
-Other Functions: We have provided additional functions for analyzing your two-photon imaging data. You can export the time labels for individual frames using the ‘View Frames’ and ‘Export Timeline’ buttons. Additionally, you can click the ‘Evaluate Mask’ button to compare different masks. 
-
-Authority and Ownership: The copyright of these codes is owned by Jikan Peng at Westlake University. Use of these codes is permitted for scientific research purposes; however, any commercial use is strictly prohibited. 
